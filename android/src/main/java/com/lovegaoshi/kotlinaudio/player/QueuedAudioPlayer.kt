@@ -21,8 +21,8 @@ class QueuedAudioPlayer(
 
     private val queue = LinkedList<MediaItem>()
 
-    private fun parseAudioItem(audioItem: AudioItem): MediaItem {
-        return audioItem2MediaItem(audioItem, if (parseEmbeddedArtwork) context else null)
+    private fun parseAudioItem(audioItem: AudioItem, skipSavingEmbeddedArtwork: Boolean = false): MediaItem {
+        return audioItem2MediaItem(audioItem, if (parseEmbeddedArtwork && !skipSavingEmbeddedArtwork) context else null, skipSavingEmbeddedArtwork)
     }
 
     var repeatMode: RepeatMode
@@ -143,7 +143,8 @@ class QueuedAudioPlayer(
      * @param items The [AudioItem]s to add.
      */
     fun add(items: List<AudioItem>) {
-        val mediaSources = items.map { parseAudioItem(it) }
+        // disable embedded artwork extraction for multiple items to prevent blocking I/O operations
+        val mediaSources = items.map { parseAudioItem(it, skipSavingEmbeddedArtwork = true) }
         queue.addAll(mediaSources)
         players().forEach { p -> p.addMediaItems(mediaSources) }
         exoPlayer.prepare()
@@ -156,7 +157,8 @@ class QueuedAudioPlayer(
      * @param atIndex  Index to insert items at, if no items loaded this will not automatically start playback.
      */
     fun add(items: List<AudioItem>, atIndex: Int) {
-        val mediaSources = items.map { parseAudioItem(it) }
+        // disable embedded artwork extraction for multiple items to prevent blocking I/O operations
+        val mediaSources = items.map { parseAudioItem(it, skipSavingEmbeddedArtwork = true) }
         queue.addAll(atIndex, mediaSources)
         players().forEach { p -> p.addMediaItems(atIndex, mediaSources) }
         exoPlayer.prepare()

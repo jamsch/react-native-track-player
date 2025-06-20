@@ -75,8 +75,7 @@ enum class MediaType(val value: String) {
 }
 
 
-
-fun audioItem2MediaItem(audioItem: AudioItem, context: Context? = null): MediaItem {
+fun audioItem2MediaItem(audioItem: AudioItem, context: Context? = null, skipSavingEmbeddedArtwork: Boolean = false): MediaItem {
     return MediaItem.Builder()
         .setMediaId(audioItem.mediaId ?: UUID.randomUUID().toString())
         .setUri(audioItem.audioUrl)
@@ -84,18 +83,34 @@ fun audioItem2MediaItem(audioItem: AudioItem, context: Context? = null): MediaIt
             MediaMetadata.Builder()
             .setTitle(audioItem.title)
             .setArtist(audioItem.artist)
-            .setArtworkUri((
-                if (context != null && audioItem.audioUrl.startsWith("file://")) {
-                    saveMediaCoverToPng(
-                        audioItem.audioUrl,
-                        context.contentResolver,
-                        audioItem.mediaId ?: audioItem.audioUrl
-                    )
-                        ?: audioItem.artwork
+            .apply {
+                val artworkUri = if (context != null && audioItem.audioUrl.startsWith("file://") && !skipSavingEmbeddedArtwork) {
+                    try {
+                        saveMediaCoverToPng(
+                            audioItem.audioUrl,
+                            context.contentResolver,
+                            audioItem.mediaId ?: audioItem.audioUrl
+                        )
+                    } catch (e: Exception) {
+                        null
+                    } ?: audioItem.artwork
+                } else audioItem.artwork
+                
+                if (artworkUri != null) {
+                    setArtworkUri(artworkUri.toUri())
                 }
-                else audioItem.artwork)?.toUri())
-            .setArtworkData(if (audioItem.audioUrl.startsWith("file://")) getEmbeddedBitmapArray(
-                audioItem.audioUrl.substring(7)) else null, MediaMetadata.PICTURE_TYPE_MEDIA)
+
+                if (audioItem.audioUrl.startsWith("file://") && !skipSavingEmbeddedArtwork) {
+                    try {
+                        val artworkData = getEmbeddedBitmapArray(audioItem.audioUrl.substring(7))
+                        if (artworkData != null) {
+                            setArtworkData(artworkData, MediaMetadata.PICTURE_TYPE_MEDIA)
+                        }
+                    } catch (e: Exception) {
+                        // Ignore artwork data errors
+                    }
+                }
+            }
             .setExtras(Bundle().apply {
                 audioItem.options?.headers?.let {
                     putSerializable("headers", audioItem.options!!.headers)

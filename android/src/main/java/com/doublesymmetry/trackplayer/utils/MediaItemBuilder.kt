@@ -27,7 +27,7 @@ fun buildMediaItem(
             .setGenre(genre)
             .setIsBrowsable(!isPlayable)
             .setIsPlayable(isPlayable)
-            .setArtworkUri(imageUri)
+            .apply { if (imageUri != null) setArtworkUri(imageUri) }
             .setMediaType(if (isPlayable) MediaMetadata.MEDIA_TYPE_MUSIC else MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
             .setExtras(extras)
             .build()
