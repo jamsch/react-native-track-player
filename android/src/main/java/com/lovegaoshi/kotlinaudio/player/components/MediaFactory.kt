@@ -25,6 +25,7 @@ import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import androidx.media3.extractor.DefaultExtractorsFactory
 import com.lovegaoshi.kotlinaudio.utils.isUriLocalFile
 import androidx.core.net.toUri
+import timber.log.Timber
 
 
 @OptIn(UnstableApi::class)
@@ -78,7 +79,12 @@ class MediaFactory (
                     }
                 }
 
-                enableCaching(tempFactory)
+                // Only enable caching if cache is actually available
+                if (cache != null) {
+                    enableCaching(tempFactory)
+                } else {
+                    tempFactory
+                }
             }
         }
 
@@ -117,14 +123,43 @@ class MediaFactory (
     }
 
     private fun enableCaching(factory: DataSource.Factory): DataSource.Factory {
-        return if (cache == null) {
+        // Add detailed debugging to understand the NPE
+        Timber.tag("RNTP").d("enableCaching called - cache is: ${cache}")
+        
+        if (cache == null) {
+            Timber.tag("RNTP").d("Cache is null in enableCaching, returning original factory")
+            return factory
+        }
+        
+        // Validate cache is properly initialized
+        try {
+            val cacheKeys = cache.keys
+            Timber.tag("RNTP").d("Cache appears valid - keys count: ${cacheKeys.size}")
+        } catch (e: Exception) {
+            Timber.tag("RNTP").e(e, "Cache validation failed, returning original factory")
+            return factory
+        }
+        
+        Timber.tag("RNTP").d("Cache is not null, attempting to create CacheDataSource.Factory")
+        
+        return try {
+            val cacheFactory = CacheDataSource.Factory()
+            Timber.tag("RNTP").d("Created CacheDataSource.Factory, setting cache")
+            
+            cacheFactory.setCache(cache)
+            Timber.tag("RNTP").d("Set cache successfully, setting upstream factory")
+            
+            cacheFactory.setUpstreamDataSourceFactory(factory)
+            Timber.tag("RNTP").d("Set upstream factory, setting flags")
+            
+            cacheFactory.setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+            Timber.tag("RNTP").d("Cache setup completed successfully")
+            
+            cacheFactory
+        } catch (e: Exception) {
+            // If cache setup fails, fall back to original factory
+            Timber.tag("RNTP").e(e, "Failed to setup cache at step, using original factory")
             factory
-        } else {
-            CacheDataSource.Factory().apply {
-                setCache(cache!!)
-                setUpstreamDataSourceFactory(factory)
-                setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-            }
         }
     }
 }

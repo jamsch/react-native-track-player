@@ -405,8 +405,18 @@ class MusicService : HeadlessJsMediaService() {
 
     @MainThread
     fun add(tracks: List<Track>) {
-        val items = tracks.map { it.toAudioItem() }
-        player.add(items)
+        try {
+            Timber.tag("RNTP").d("MusicService.add: Converting ${tracks.size} tracks to AudioItems")
+            val items = tracks.map { it.toAudioItem() }
+            
+            Timber.tag("RNTP").d("MusicService.add: Calling player.add with ${items.size} items")
+            player.add(items)
+            
+            Timber.tag("RNTP").d("MusicService.add: Successfully added tracks to player")
+        } catch (exception: Exception) {
+            Timber.tag("RNTP").e(exception, "MusicService.add: Error adding tracks")
+            throw exception
+        }
     }
 
     @MainThread

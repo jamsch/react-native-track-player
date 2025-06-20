@@ -24,10 +24,12 @@ import com.doublesymmetry.trackplayer.utils.buildMediaItem
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
+import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
 import java.util.*
 import javax.annotation.Nonnull
-import androidx.core.net.toUri
 
 
 /**
@@ -631,10 +633,23 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
 
         try {
-            musicService.clear()
-            musicService.add(readableArrayToTrackList(data))
+            Timber.tag("RNTP").d("setQueue: Starting - clearing current queue")
+            
+            // Ensure we're on the main thread for MusicService operations
+            withContext(Dispatchers.Main) {
+                musicService.clear()
+                
+                Timber.tag("RNTP").d("setQueue: Converting tracks from ReadableArray")
+                val tracks = readableArrayToTrackList(data)
+                Timber.tag("RNTP").d("setQueue: Adding ${tracks.size} tracks to queue")
+                
+                musicService.add(tracks)
+            }
+            
+            Timber.tag("RNTP").d("setQueue: Successfully added tracks, resolving promise")
             callback.resolve(null)
         } catch (exception: Exception) {
+            Timber.tag("RNTP").e(exception, "setQueue: Error occurred")
             rejectWithException(callback, exception)
         }
     }

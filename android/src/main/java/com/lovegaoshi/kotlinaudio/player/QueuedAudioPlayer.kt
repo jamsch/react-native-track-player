@@ -11,6 +11,7 @@ import com.lovegaoshi.kotlinaudio.models.*
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
+import timber.log.Timber
 
 class QueuedAudioPlayer(
     private val context: Context,
@@ -143,11 +144,25 @@ class QueuedAudioPlayer(
      * @param items The [AudioItem]s to add.
      */
     fun add(items: List<AudioItem>) {
-        // disable embedded artwork extraction for multiple items to prevent blocking I/O operations
-        val mediaSources = items.map { parseAudioItem(it, skipSavingEmbeddedArtwork = true) }
-        queue.addAll(mediaSources)
-        players().forEach { p -> p.addMediaItems(mediaSources) }
-        exoPlayer.prepare()
+        try {
+            // disable embedded artwork extraction for multiple items to prevent blocking I/O operations
+            timber.log.Timber.tag("RNTP").d("QueuedAudioPlayer.add: Parsing ${items.size} items with skipSavingEmbeddedArtwork=true")
+            val mediaSources = items.map { parseAudioItem(it, skipSavingEmbeddedArtwork = true) }
+            
+            timber.log.Timber.tag("RNTP").d("QueuedAudioPlayer.add: Adding ${mediaSources.size} media sources to queue")
+            queue.addAll(mediaSources)
+            
+            timber.log.Timber.tag("RNTP").d("QueuedAudioPlayer.add: Adding media items to all players")
+            players().forEach { p -> p.addMediaItems(mediaSources) }
+            
+            timber.log.Timber.tag("RNTP").d("QueuedAudioPlayer.add: Calling exoPlayer.prepare()")
+            exoPlayer.prepare()
+            
+            timber.log.Timber.tag("RNTP").d("QueuedAudioPlayer.add: Successfully completed")
+        } catch (exception: Exception) {
+            timber.log.Timber.tag("RNTP").e(exception, "QueuedAudioPlayer.add: Error adding items")
+            throw exception
+        }
     }
 
 

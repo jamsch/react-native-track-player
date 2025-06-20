@@ -236,7 +236,16 @@ abstract class AudioPlayer internal constructor(
 
     init {
         if (options.cacheSize > 0) {
-            cache = Cache.initCache(context, options.cacheSize)
+            try {
+                Timber.tag("RNTP").d("Initializing cache with size: ${options.cacheSize}")
+                cache = Cache.initCache(context, options.cacheSize)
+                Timber.tag("RNTP").d("Cache initialized successfully: ${cache}")
+            } catch (e: Exception) {
+                Timber.tag("RNTP").e(e, "Failed to initialize cache, proceeding without cache")
+                cache = null
+            }
+        } else {
+            Timber.tag("RNTP").d("Cache disabled (size <= 0): ${options.cacheSize}")
         }
         playerEventHolder.updateAudioPlayerState(AudioPlayerState.IDLE)
         exoPlayer1 = initExoPlayer("APM-Player1")
@@ -538,7 +547,7 @@ abstract class AudioPlayer internal constructor(
 
         /**
          * The generic onEvents callback provides access to the Player object and specifies the set
-         * of events that occurred together. It’s always called after the callbacks that correspond
+         * of events that occurred together. It's always called after the callbacks that correspond
          * to the individual events.
          */
         override fun onEvents(player: Player, events: Player.Events) {
