@@ -48,8 +48,8 @@ export type EventPayloadByEvent = {
   [Event.RemoteSkip]: RemoteSkipEvent;
   [Event.RemoteNext]: never;
   [Event.RemotePrevious]: never;
-  [Event.RemoteJumpForward]: RemoteJumpForwardEvent;
-  [Event.RemoteJumpBackward]: RemoteJumpBackwardEvent;
+  [Event.RemoteJumpForward]: RemoteJumpForwardEvent | null;
+  [Event.RemoteJumpBackward]: RemoteJumpBackwardEvent | null;
   [Event.RemoteSeek]: RemoteSeekEvent;
   [Event.RemoteSetRating]: RemoteSetRatingEvent;
   [Event.RemoteDuck]: RemoteDuckEvent;
