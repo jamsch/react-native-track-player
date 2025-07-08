@@ -133,6 +133,7 @@ class MusicService : HeadlessJsMediaService() {
             action = Intent.ACTION_VIEW
         }
         mediaSession = MediaLibrarySession.Builder(this, fakePlayer, APMMediaSessionCallback() )
+            .setId("rntp_media_session")
             .setBitmapLoader(CacheBitmapLoader(CoilBitmapLoader(this)))
             // https://github.com/androidx/media/issues/1218
             .setSessionActivity(PendingIntent.getActivity(this, 0, openAppIntent, getPendingIntentFlags()))
@@ -936,11 +937,15 @@ class MusicService : HeadlessJsMediaService() {
     @MainThread
     override fun onDestroy() {
         Timber.tag("APM").d("RNTP service is destroyed.")
-        if (::player.isInitialized) {
+        if (::mediaSession.isInitialized) {
             mediaSession.release()
+        }
+        if (::fakePlayer.isInitialized) {
+            fakePlayer.release()
+        }
+        if (::player.isInitialized) {
             player.destroy()
         }
-
         progressUpdateJob?.cancel()
         super.onDestroy()
     }
