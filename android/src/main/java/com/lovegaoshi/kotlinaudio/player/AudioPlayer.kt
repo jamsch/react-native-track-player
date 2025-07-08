@@ -448,13 +448,27 @@ abstract class AudioPlayer internal constructor(
         }
     }
 
-    inner class AudioFxInitListener: AnalyticsListener {
+    inner class AudioFxInitListener : AnalyticsListener {
         @OptIn(UnstableApi::class)
         override fun onAudioSessionIdChanged(eventTime: AnalyticsListener.EventTime, audioSessionId: Int) {
-            loudnessEnhancers.add(LoudnessEnhancer(audioSessionId))
-            equalizers.add(Equalizer(0, audioSessionId))
+            // Try to add LoudnessEnhancer
+            try {
+                val enhancer = LoudnessEnhancer(audioSessionId)
+                loudnessEnhancers.add(enhancer)
+            } catch (e: RuntimeException) {
+                Timber.e("AudioFxInitListener", "LoudnessEnhancer init failed: ${e.message}")
+            }
+
+            // Try to add Equalizer
+            try {
+                val equalizer = Equalizer(0, audioSessionId)
+                equalizers.add(equalizer)
+            } catch (e: RuntimeException) {
+                Timber.e("AudioFxInitListener", "Equalizer init failed: ${e.message}")
+            }
         }
     }
+
     inner class PlayerListener : Listener {
 
         /**
