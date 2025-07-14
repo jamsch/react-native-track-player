@@ -59,7 +59,6 @@ class CoilBitmapLoader @Inject constructor(
             bitmap = (response.drawable as? BitmapDrawable)?.bitmap
 
         }
-        bitmap ?: Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565)
-
+        bitmap ?: Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888)
     }
 }
