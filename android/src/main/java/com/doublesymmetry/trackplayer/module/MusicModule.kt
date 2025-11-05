@@ -615,7 +615,8 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
 
         if (index >= 0 && index < musicService.tracks.size) {
-            callback.resolve(Arguments.fromBundle(musicService.tracks[index].originalItem))
+            val bundle = musicService.tracks[index].originalItem
+            callback.resolve(if (bundle != null) Arguments.fromBundle(bundle) else null)
         } else {
             callback.resolve(null)
         }
@@ -667,9 +668,10 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
         callback.resolve(
             if (musicService.tracks.isEmpty()) null
-            else Arguments.fromBundle(
-                musicService.tracks[musicService.getCurrentTrackIndex()].originalItem
-            )
+            else {
+                val bundle = musicService.tracks[musicService.getCurrentTrackIndex()].originalItem
+                if (bundle != null) Arguments.fromBundle(bundle) else null
+            }
         )
     }
 
