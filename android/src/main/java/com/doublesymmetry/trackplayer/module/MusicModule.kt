@@ -314,8 +314,7 @@ class MusicModule(reactContext: ReactApplicationContext) : NativeTrackPlayerSpec
         callback.resolve(null)
     }
 
-    @ReactMethod
-    fun add(data: ReadableArray?, insertBeforeIndex: Int, callback: Promise) = launchInScope {
+    override fun add(data: ReadableArray?, insertBeforeIndex: Double, callback: Promise) = launchInScope {
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
 
         val insertB4Index = insertBeforeIndex.toInt()
@@ -572,16 +571,13 @@ class MusicModule(reactContext: ReactApplicationContext) : NativeTrackPlayerSpec
     override fun getTrack(index: Double, callback: Promise) = launchInScope {
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
 
-        if (index >= 0 && index < musicService.tracks.size) {
-            val bundle = musicService.tracks[index].originalItem
-            callback.resolve(if (bundle != null) Arguments.fromBundle(bundle) else null)
+        val indexInt = index.toInt()
+        if (indexInt >= 0 && indexInt < musicService.tracks.size) {
+            val originalItem = musicService.tracks[indexInt].originalItem
+            callback.resolve(if (originalItem != null) Arguments.fromBundle(originalItem) else null)
         } else {
             callback.resolve(null)
-            return@launchInScope
         }
-
-        val originalItem = musicService.tracks[index.toInt()].originalItem
-        callback.resolve(if(originalItem == null) null else Arguments.fromBundle(originalItem))
     }
 
     override fun getQueue(callback: Promise) = launchInScope {

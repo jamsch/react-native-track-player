@@ -62,10 +62,6 @@ export interface Spec extends TurboModule {
     waitUntil?: number,
   ): Promise<void>;
   getLastConnectedPackage(): Promise<string | undefined>;
-  setLoudnessEnhance(gain: number): Promise<void>;
-  setEqualizerPreset(preset: number): Promise<void>;
-  getCurrentEqualizerPreset(): Promise<number>;
-  getEqualizerPresets(): Promise<string[]>;
 
   // event listeners
   addListener(eventName: string): void;
