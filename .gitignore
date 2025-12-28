@@ -10,6 +10,7 @@ package-lock.json
 
 # Android
 
+android/.cxx/
 android/.gradle/
 android/.idea/
 android/build/
@@ -58,3 +59,4 @@ ios/Pods
 ios/RNTrackPlayer.xcworkspace
 Podfile.lock
 local.properties
+yarn.lock

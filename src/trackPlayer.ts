@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 
 import { Event, RepeatMode, State, AndroidAutoContentStyle } from './constants';
-import TrackPlayer from './TrackPlayerModule';
+import TrackPlayer from '../specs/NativeTrackPlayer';
 import type {
   AddTrack,
   EventPayloadByEvent,
@@ -36,13 +36,13 @@ function resolveImportedAssetOrPath(pathOrAsset: string | number | undefined) {
   return pathOrAsset === undefined
     ? undefined
     : typeof pathOrAsset === 'string'
-    ? pathOrAsset
-    : resolveImportedAsset(pathOrAsset);
+      ? pathOrAsset
+      : resolveImportedAsset(pathOrAsset);
 }
 
 function resolveImportedAsset(id?: number) {
   return id
-    ? (resolveAssetSource(id) as { uri: string } | null) ?? undefined
+    ? ((resolveAssetSource(id) as { uri: string } | null) ?? undefined)
     : undefined;
 }
 
@@ -61,11 +61,9 @@ function resolveImportedAsset(id?: number) {
  */
 export async function setupPlayer(
   options: PlayerOptions = {},
-  background = false
+  background = false,
 ): Promise<void> {
-  return isAndroid
-    ? TrackPlayer.setupPlayer(options, background)
-    : TrackPlayer.setupPlayer(options);
+  return TrackPlayer.setupPlayer(options, background);
 }
 
 /**
@@ -87,16 +85,9 @@ export function addEventListener<T extends Event>(
   event: T,
   listener: EventPayloadByEvent[T] extends never
     ? () => void
-    : (event: EventPayloadByEvent[T]) => void
+    : (event: EventPayloadByEvent[T]) => void,
 ) {
   return emitter.addListener(event, listener);
-}
-
-/**
- * @deprecated This method should not be used, most methods reject when service is not bound.
- */
-export function isServiceRunning(): Promise<boolean> {
-  return TrackPlayer.isServiceRunning();
 }
 
 // MARK: - Queue API
@@ -110,7 +101,7 @@ export function isServiceRunning(): Promise<boolean> {
  */
 export async function add(
   tracks: AddTrack[],
-  insertBeforeIndex?: number
+  insertBeforeIndex?: number,
 ): Promise<number | void>;
 /**
  * Adds a track to the queue.
@@ -121,18 +112,18 @@ export async function add(
  */
 export async function add(
   track: AddTrack,
-  insertBeforeIndex?: number
+  insertBeforeIndex?: number,
 ): Promise<number | void>;
 export async function add(
   tracks: AddTrack | AddTrack[],
-  insertBeforeIndex = -1
+  insertBeforeIndex = -1,
 ): Promise<number | void> {
   const resolvedTracks = (Array.isArray(tracks) ? tracks : [tracks]).map(
     (track) => ({
       ...track,
       url: resolveImportedAssetOrPath(track.url),
       artwork: resolveImportedAssetOrPath(track.artwork),
-    })
+    }),
   );
   return resolvedTracks.length < 1
     ? undefined
@@ -181,7 +172,7 @@ export async function remove(indexes: number[]): Promise<void>;
 export async function remove(index: number): Promise<void>;
 export async function remove(indexOrIndexes: number | number[]): Promise<void> {
   return TrackPlayer.remove(
-    Array.isArray(indexOrIndexes) ? indexOrIndexes : [indexOrIndexes]
+    Array.isArray(indexOrIndexes) ? indexOrIndexes : [indexOrIndexes],
   );
 }
 
@@ -260,7 +251,7 @@ export async function updateOptions({
  */
 export async function updateMetadataForTrack(
   trackIndex: number,
-  metadata: TrackMetadataBase
+  metadata: TrackMetadataBase,
 ): Promise<void> {
   return TrackPlayer.updateMetadataForTrack(trackIndex, {
     ...metadata,
@@ -269,20 +260,11 @@ export async function updateMetadataForTrack(
 }
 
 /**
- * @deprecated Nominated for removal in the next major version. If you object
- * to this, please describe your use-case in the following issue:
- * https://github.com/doublesymmetry/react-native-track-player/issues/1653
- */
-export function clearNowPlayingMetadata(): Promise<void> {
-  return TrackPlayer.clearNowPlayingMetadata();
-}
-
-/**
  * Updates the metadata content of the notification (Android) and the Now Playing Center (iOS)
  * without affecting the data stored for the current track.
  */
 export function updateNowPlayingMetadata(
-  metadata: NowPlayingMetadata
+  metadata: NowPlayingMetadata,
 ): Promise<void> {
   return TrackPlayer.updateNowPlayingMetadata({
     ...metadata,
@@ -326,7 +308,7 @@ export async function stop(): Promise<void> {
  * or `TrackPlayer.pause()` when `playWhenReady = false`.
  */
 export async function setPlayWhenReady(
-  playWhenReady: boolean
+  playWhenReady: boolean,
 ): Promise<boolean> {
   return TrackPlayer.setPlayWhenReady(playWhenReady);
 }
@@ -453,7 +435,7 @@ export const fadeOutPause = async (duration = 500, interval = 20) => {
 export const fadeOutNext = async (
   duration = 500,
   interval = 20,
-  toVolume = 1
+  toVolume = 1,
 ) => {
   if (isAndroid) {
     TrackPlayer.fadeOutNext(duration, interval, toVolume);
@@ -483,7 +465,7 @@ export const fadeOutNext = async (
 export const fadeOutPrevious = async (
   duration = 500,
   interval = 20,
-  toVolume = 1
+  toVolume = 1,
 ) => {
   if (isAndroid) {
     TrackPlayer.fadeOutPrevious(duration, interval, toVolume);
@@ -515,7 +497,7 @@ export const fadeOutJump = async (
   index: number,
   duration = 500,
   interval = 20,
-  toVolume = 1
+  toVolume = 1,
 ) => {
   if (isAndroid) {
     TrackPlayer.fadeOutJump(index, duration, interval, toVolume);
@@ -604,6 +586,7 @@ export async function getPitch(): Promise<number> {
  * index.
  */
 export async function getTrack(index: number): Promise<Track | undefined> {
+  // @ts-expect-error codegen issues
   return TrackPlayer.getTrack(index);
 }
 
@@ -611,6 +594,7 @@ export async function getTrack(index: number): Promise<Track | undefined> {
  * Gets the whole queue.
  */
 export async function getQueue(): Promise<Track[]> {
+  // @ts-expect-error codegen issues
   return TrackPlayer.getQueue();
 }
 
@@ -626,41 +610,8 @@ export async function getActiveTrackIndex(): Promise<number | undefined> {
  * Gets the active track or undefined if there is no current track.
  */
 export async function getActiveTrack(): Promise<Track | undefined> {
+  // @ts-expect-error codegen issues
   return (await TrackPlayer.getActiveTrack()) ?? undefined;
-}
-
-/**
- * Gets the index of the current track or null if there is no current track.
- *
- * @deprecated use `TrackPlayer.getActiveTrackIndex()` instead.
- */
-export async function getCurrentTrack(): Promise<number | null> {
-  return TrackPlayer.getActiveTrackIndex();
-}
-
-/**
- * Gets the duration of the current track in seconds.
- * @deprecated Use `TrackPlayer.getProgress().then((progress) => progress.duration)` instead.
- */
-export async function getDuration(): Promise<number> {
-  return TrackPlayer.getDuration();
-}
-
-/**
- * Gets the buffered position of the current track in seconds.
- *
- * @deprecated Use `TrackPlayer.getProgress().then((progress) => progress.buffered)` instead.
- */
-export async function getBufferedPosition(): Promise<number> {
-  return TrackPlayer.getBufferedPosition();
-}
-
-/**
- * Gets the playback position of the current track in seconds.
- * @deprecated Use `TrackPlayer.getProgress().then((progress) => progress.position)` instead.
- */
-export async function getPosition(): Promise<number> {
-  return TrackPlayer.getPosition();
 }
 
 /**
@@ -669,14 +620,8 @@ export async function getPosition(): Promise<number> {
  * duration in seconds.
  */
 export async function getProgress(): Promise<Progress> {
+  // @ts-expect-error codegen issues
   return TrackPlayer.getProgress();
-}
-
-/**
- * @deprecated use (await getPlaybackState()).state instead.
- */
-export async function getState(): Promise<State> {
-  return (await TrackPlayer.getPlaybackState()).state;
 }
 
 /**
@@ -685,6 +630,7 @@ export async function getState(): Promise<State> {
  * @see https://rntp.dev/docs/api/constants/state
  */
 export async function getPlaybackState(): Promise<PlaybackState> {
+  // @ts-expect-error codegen issues
   return TrackPlayer.getPlaybackState();
 }
 
@@ -714,7 +660,7 @@ export async function retry() {
  * @returns a serialized copy of the browseTree set by native. For debug purposes.
  */
 export async function setBrowseTree(
-  browseTree: AndroidAutoBrowseTree
+  browseTree: AndroidAutoBrowseTree,
 ): Promise<string> {
   if (!isAndroid) return new Promise(() => '');
   return TrackPlayer.setBrowseTree(browseTree);
@@ -740,7 +686,7 @@ export async function setPlaybackState(mediaID: string): Promise<void> {
  */
 export function setBrowseTreeStyle(
   browsableStyle: AndroidAutoContentStyle,
-  playableStyle: AndroidAutoContentStyle
+  playableStyle: AndroidAutoContentStyle,
 ): null {
   if (!isAndroid) return null;
   TrackPlayer.setBrowseTreeStyle(browsableStyle, playableStyle);
@@ -770,28 +716,41 @@ export async function abandonWakeLock() {
  * will be prepared. its advised to call this well before actually performing
  * crossfade so the resource can be prepared.
  */
-export async function crossFadePrepare(previous = false) {
+export async function crossFadePrepare(previous = false, seekTo = 0) {
   if (!isAndroid) return;
-  TrackPlayer.crossFadePrepare(previous);
+  TrackPlayer.crossFadePrepare(previous, seekTo);
 }
 
 /**
- * perform crossfade (android only). fadeDuration and fadeInterval are both in ms.
+ * perform crossfade (android only).
+ *
+ * fadeDuration and fadeInterval are both in ms.
+ *
  * fadeToVolume is a float from 0-1.
+ *
+ * waitUntil is in ms.
  */
 export async function crossFade(
   fadeDuration = 2000,
   fadeInterval = 20,
-  fadeToVolume = 1
+  fadeToVolume = 1,
+  waitUntil = 0,
 ) {
   if (!isAndroid) return;
-  TrackPlayer.switchExoPlayer(fadeDuration, fadeInterval, fadeToVolume);
+  TrackPlayer.switchExoPlayer(
+    fadeDuration,
+    fadeInterval,
+    fadeToVolume,
+    waitUntil,
+  );
 }
 
 /**
  * get the last connected package. non android will return undefined.
+ *
  * android without a connected package (either system.UI, android auto, or media controller) yet
  * will return ''; else will be one of the three.
+ *
  * I intend to use this to determine if app crashed from android auto.
  */
 export async function getLastConnectedPackage(): Promise<string | undefined> {

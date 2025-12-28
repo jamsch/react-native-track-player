@@ -75,18 +75,26 @@ class MusicService : HeadlessJsMediaService() {
     private var lastWake: Long = 0
     var lastConnectedPackage: String = ""
 
-    fun crossFadePrepare(previous: Boolean = false) { player.crossFadePrepare(previous) }
+    fun crossFadePrepare(previous: Boolean = false, seekTo: Double = 0.0) {
+        player.crossFadePrepare(previous, seekTo)
+    }
 
     fun switchExoPlayer(
         fadeDuration: Long = 2500,
         fadeInterval: Long = 20,
-        fadeToVolume: Float = 1f
+        fadeToVolume: Float = 1f,
+        waitUntil: Long = 0
     ) {
         player.switchExoPlayer(
             fadeDuration = fadeDuration,
             fadeInterval = fadeInterval,
-            fadeToVolume = fadeToVolume)
-        emitPlaybackTrackChangedEvents(null, null, 0.0)
+            fadeToVolume = fadeToVolume,
+            waitUntil = waitUntil,
+            playerOperation = {
+                player.play()
+                emitPlaybackTrackChangedEvents(null, null, 0.0)
+            })
+
     }
 
     fun acquireWakeLock() { acquireWakeLockNow(this) }
