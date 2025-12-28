@@ -90,17 +90,7 @@
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*",
-    "react-native-windows": "*",
-    "shaka-player": "^4.7.9"
-  },
-  "peerDependenciesMeta": {
-    "react-native-windows": {
-      "optional": true
-    },
-    "shaka-player": {
-      "optional": true
-    }
+    "react-native": "*"
   },
   "devDependencies": {
     "@react-native-community/cli": "20.0.0",
@@ -109,7 +99,6 @@
     "del-cli": "^5.1.0",
     "react": "19.1.0",
     "react-native": "0.81.1",
-    "shaka-player": "^4.15.4",
     "typescript": "^5.8.3"
   },
   "funding": "https://github.com/doublesymmetry/react-native-track-player?sponsor=1",
