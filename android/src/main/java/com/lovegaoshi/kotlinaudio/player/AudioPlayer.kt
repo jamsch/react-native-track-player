@@ -2,8 +2,6 @@
 
 import android.content.Context
 import android.media.AudioManager
-import android.media.audiofx.Equalizer
-import android.media.audiofx.LoudnessEnhancer
 import androidx.annotation.CallSuper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -20,7 +18,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.analytics.AnalyticsListener
 import com.lovegaoshi.kotlinaudio.event.PlayerEventHolder
 import com.lovegaoshi.kotlinaudio.models.AudioItem
 import com.lovegaoshi.kotlinaudio.models.audioItem2MediaItem
@@ -33,12 +30,10 @@ import com.lovegaoshi.kotlinaudio.models.PlaybackError
 import com.lovegaoshi.kotlinaudio.models.PlayerOptions
 import com.lovegaoshi.kotlinaudio.models.PositionChangedReason
 import com.lovegaoshi.kotlinaudio.models.setWakeMode
-import com.lovegaoshi.kotlinaudio.player.components.APMRenderersFactory
 import com.lovegaoshi.kotlinaudio.player.components.Cache
 import com.lovegaoshi.kotlinaudio.player.components.FocusManager
 import com.lovegaoshi.kotlinaudio.player.components.MediaFactory
 import com.lovegaoshi.kotlinaudio.player.components.setupBuffer
-import com.lovegaoshi.kotlinaudio.processors.FFTEmitter
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
@@ -57,8 +52,6 @@ abstract class AudioPlayer internal constructor(
     // for crossfading
     private var exoPlayer1: ExoPlayer
     private var exoPlayer2: ExoPlayer? = null
-    private var loudnessEnhancers = ArrayList<LoudnessEnhancer>()
-    private var equalizers = ArrayList<Equalizer>()
     private var currentExoPlayer = true
 
     var exoPlayer: ExoPlayer
@@ -69,7 +62,6 @@ abstract class AudioPlayer internal constructor(
     val playerEventHolder = PlayerEventHolder()
     private val focusListener = APMFocusListener()
     private val focusManager = FocusManager(context, listener=focusListener, options=options)
-    var fftEmitter: (DoubleArray) -> Unit = { v -> Timber.tag("APMFFT").d("FFT emitted $v") }
 
     var alwaysPauseOnInterruption: Boolean
         get() = focusManager.alwaysPauseOnInterruption
@@ -196,20 +188,7 @@ abstract class AudioPlayer internal constructor(
     }
 
     private fun initExoPlayer(name: String): ExoPlayer {
-        // HACK: horrible memleak, but I cant think of how to track exoplayers
-        val nameHolder = arrayOf("")
-        val renderer = if (options.useFFTProcessor > 0) APMRenderersFactory(
-            context, options.useFFTProcessor, object: FFTEmitter {
-                override fun onSpectrumReady(spectrum: FloatArray, maxRawAmp: Float) {
-                    return
-                }
-                override fun onFrequencyFFTReady(fft: DoubleArray, max: Float) {
-                    if (this@AudioPlayer.exoPlayer.toString() == nameHolder[0]) {
-                        fftEmitter(fft)
-                    }
-                }
-
-        }) else DefaultRenderersFactory(context)
+        val renderer = DefaultRenderersFactory(context)
         renderer.setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
         val mPlayer = ExoPlayer
             .Builder(context)
@@ -228,9 +207,6 @@ abstract class AudioPlayer internal constructor(
             .setContentType(options.audioContentType)
             .build()
         mPlayer.setAudioAttributes(audioAttributes, options.handleAudioFocus)
-        nameHolder[0] = mPlayer.toString()
-        // https://github.com/androidx/media/issues/2319
-        mPlayer.addAnalyticsListener(AudioFxInitListener())
         return mPlayer
     }
 
@@ -273,35 +249,6 @@ abstract class AudioPlayer internal constructor(
     open fun load(item: AudioItem) {
         players().forEach { p -> p.addMediaItem(audioItem2MediaItem(item)) }
         exoPlayer.prepare()
-    }
-
-    fun setLoudnessEnhance(gain: Int) {
-        loudnessEnhancers.forEach { l ->
-            l.setTargetGain(gain)
-            l.enabled = true
-        }
-    }
-
-    fun setEqualizerPreset(preset: Int) {
-        equalizers.forEach { equalizer ->
-            equalizer.usePreset(preset.toShort())
-            equalizer.enabled = true
-        }
-    }
-
-    fun getCurrentEQPreset(): Int {
-        if (equalizers.isEmpty()) {
-            return -1
-        }
-        return equalizers[0].currentPreset.toInt()
-    }
-
-    fun getEqualizerPresets(): List<String> {
-        if (equalizers.isEmpty()) {
-            return arrayListOf()
-        }
-        return Array(equalizers[0].numberOfPresets.toInt()) { i -> i }
-            .map { i -> equalizers[0].getPresetName(i.toShort()) }
     }
 
     fun togglePlaying() {
@@ -371,8 +318,6 @@ abstract class AudioPlayer internal constructor(
             p.removeListener(playerListener)
             p.release()
         }
-        equalizers.forEach { e -> e.release() }
-        loudnessEnhancers.forEach { e -> e.release() }
         cache?.release()
         cache = null
     }
@@ -445,27 +390,6 @@ abstract class AudioPlayer internal constructor(
                 }
             }
             // player.broadcastMediaItem()
-        }
-    }
-
-    inner class AudioFxInitListener : AnalyticsListener {
-        @OptIn(UnstableApi::class)
-        override fun onAudioSessionIdChanged(eventTime: AnalyticsListener.EventTime, audioSessionId: Int) {
-            // Try to add LoudnessEnhancer
-            try {
-                val enhancer = LoudnessEnhancer(audioSessionId)
-                loudnessEnhancers.add(enhancer)
-            } catch (e: RuntimeException) {
-                Timber.e("AudioFxInitListener", "LoudnessEnhancer init failed: ${e.message}")
-            }
-
-            // Try to add Equalizer
-            try {
-                val equalizer = Equalizer(0, audioSessionId)
-                equalizers.add(equalizer)
-            } catch (e: RuntimeException) {
-                Timber.e("AudioFxInitListener", "Equalizer init failed: ${e.message}")
-            }
         }
     }
 

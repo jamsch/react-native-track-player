@@ -27,7 +27,6 @@ import type {
   ControllerConnectedEvent,
   ControllerDisconnectedEvent,
 } from './ControllerConnectedEvent';
-import type { FFTUpdateEvent } from './FFTUpdateEvent';
 
 export type EventPayloadByEvent = {
   [Event.PlayerError]: PlayerErrorEvent;
@@ -65,7 +64,6 @@ export type EventPayloadByEvent = {
   [Event.MetadataCommonReceived]: AudioCommonMetadataReceivedEvent;
   [Event.connectorConnected]: ControllerConnectedEvent;
   [Event.connectorDisconnected]: ControllerDisconnectedEvent;
-  [Event.fftUpdate]: FFTUpdateEvent;
 };
 
 // eslint-disable-next-line

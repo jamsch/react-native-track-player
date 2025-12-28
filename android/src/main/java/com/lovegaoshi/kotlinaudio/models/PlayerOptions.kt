@@ -19,7 +19,6 @@ data class PlayerOptions(
     val skipSilence: Boolean = false,
     val crossfade: Boolean = false,
     val nativeExample: Boolean = false,
-    val useFFTProcessor: Int = 0,
 )
 
 data class BufferOptions (

@@ -18,8 +18,6 @@ import {
   Progress,
   Spacer,
   TrackInfo,
-  Visualizer,
-  EQ,
 } from './components';
 import { QueueInitialTracksService, SetupService } from './services';
 import DemoAndroidAutoHierarchy from './services/AndroidAutoHierarchy';
@@ -63,9 +61,6 @@ const Inner: React.FC = () => {
         <TrackInfo track={track} />
         <Progress live={track?.isLiveStream} />
         <PlayerControls />
-        {/* uncomment this for EQ and loudness enhancer */}
-        {/*<EQ /> */}
-        <Visualizer />
       </View>
     </SafeAreaView>
   );
